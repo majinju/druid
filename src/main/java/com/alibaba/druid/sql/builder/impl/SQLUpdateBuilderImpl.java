@@ -45,7 +45,7 @@ public class SQLUpdateBuilderImpl extends SQLBuilderImpl implements SQLUpdateBui
     public SQLUpdateBuilderImpl(String sql, DbType dbType){
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
 
-        if (stmtList.size() == 0) {
+        if (stmtList.isEmpty()) {
             throw new IllegalArgumentException("not support empty-statement :" + sql);
         }
 
@@ -161,6 +161,7 @@ public class SQLUpdateBuilderImpl extends SQLBuilderImpl implements SQLUpdateBui
         switch (dbType) {
             case mysql:
             case mariadb:
+            case tidb:
                 return new MySqlUpdateStatement();
             case oracle:
                 return new OracleUpdateStatement();

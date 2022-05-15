@@ -170,6 +170,8 @@ public abstract class DruidAbstractDataSource extends WrapperAdapter implements 
     protected volatile long                            timeBetweenConnectErrorMillis             = DEFAULT_TIME_BETWEEN_CONNECT_ERROR_MILLIS;
 
     protected volatile ValidConnectionChecker          validConnectionChecker                    = null;
+    
+    protected volatile boolean                         usePingMethod                             = false;
 
     protected final Map<DruidPooledConnection, Object> activeConnections                         = new IdentityHashMap<DruidPooledConnection, Object>();
     protected final static Object                      PRESENT                                   = new Object();
@@ -639,6 +641,14 @@ public abstract class DruidAbstractDataSource extends WrapperAdapter implements 
 
     public void setValidConnectionChecker(ValidConnectionChecker validConnectionChecker) {
         this.validConnectionChecker = validConnectionChecker;
+    }
+
+    public boolean isUsePingMethod() {
+        return usePingMethod;
+    }
+
+    public void setUsePingMethod(boolean usePingMethod) {
+        this.usePingMethod = usePingMethod;
     }
 
     public String getValidConnectionCheckerClassName() {
@@ -1653,7 +1663,7 @@ public abstract class DruidAbstractDataSource extends WrapperAdapter implements 
 
     public Connection createPhysicalConnection(String url, Properties info) throws SQLException {
         Connection conn;
-        if (getProxyFilters().size() == 0) {
+        if (getProxyFilters().isEmpty()) {
             conn = getDriver().connect(url, info);
         } else {
             conn = new FilterChainImpl(this).connection_connect(info);
@@ -1837,7 +1847,7 @@ public abstract class DruidAbstractDataSource extends WrapperAdapter implements 
         }
 
         Collection<String> initSqls = getConnectionInitSqls();
-        if (initSqls.size() == 0
+        if (initSqls.isEmpty()
                 && variables == null
                 && globalVariables == null) {
             return;
@@ -1856,7 +1866,7 @@ public abstract class DruidAbstractDataSource extends WrapperAdapter implements 
             }
 
             DbType dbType = DbType.of(this.dbTypeName);
-            if (dbType == DbType.mysql || dbType == DbType.ads) {
+            if (JdbcUtils.isMysqlDbType(dbType)) {
                 if (variables != null) {
                     ResultSet rs = null;
                     try {

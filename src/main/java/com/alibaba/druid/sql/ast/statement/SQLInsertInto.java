@@ -19,9 +19,12 @@ import com.alibaba.druid.sql.ast.*;
 import com.alibaba.druid.sql.ast.statement.SQLInsertStatement.ValuesClause;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public abstract class SQLInsertInto extends SQLStatementImpl implements SQLReplaceable {
+    protected List<String>              insertBeforeComments;
+
     protected SQLExprTableSource        tableSource;
     protected final List<SQLExpr>       columns = new ArrayList<SQLExpr>();
     protected transient String          columnsString;
@@ -63,6 +66,19 @@ public abstract class SQLInsertInto extends SQLStatementImpl implements SQLRepla
                 x.addPartition(item.clone());
             }
         }
+    }
+
+    public void addInsertBeforeComment(List<String> comments) {
+        if (insertBeforeComments == null) {
+            insertBeforeComments = new ArrayList<>();
+        }
+
+        insertBeforeComments.addAll(comments);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getInsertBeforeCommentsDirect() {
+        return insertBeforeComments;
     }
 
     public boolean replace(SQLExpr expr, SQLExpr target) {
@@ -148,14 +164,14 @@ public abstract class SQLInsertInto extends SQLStatementImpl implements SQLRepla
     }
 
     public ValuesClause getValues() {
-        if (valuesList.size() == 0) {
+        if (valuesList.isEmpty()) {
             return null;
         }
         return valuesList.get(0);
     }
 
     public void setValues(ValuesClause values) {
-        if (valuesList.size() == 0) {
+        if (valuesList.isEmpty()) {
             valuesList.add(values);
         } else {
             valuesList.set(0, values);

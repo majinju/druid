@@ -20,9 +20,6 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.*;
 import com.alibaba.druid.sql.ast.expr.*;
 import com.alibaba.druid.sql.dialect.odps.ast.OdpsUDTFSQLSelectItem;
-import com.alibaba.druid.sql.parser.Lexer;
-import com.alibaba.druid.sql.parser.SQLParserUtils;
-import com.alibaba.druid.sql.visitor.SQLASTOutputVisitor;
 import com.alibaba.druid.sql.visitor.SQLASTVisitor;
 import com.alibaba.druid.sql.visitor.SQLASTVisitorAdapter;
 import com.alibaba.druid.util.FnvHash;
@@ -32,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
 
-public class SQLSelectQueryBlock extends SQLObjectImpl implements SQLSelectQuery, SQLReplaceable, SQLDbTypedObject {
+public class SQLSelectQueryBlock extends SQLSelectQueryBase implements SQLReplaceable, SQLDbTypedObject {
     protected int                        distionOption;
     protected final List<SQLSelectItem>  selectList      = new ArrayList<SQLSelectItem>();
 
@@ -50,7 +47,6 @@ public class SQLSelectQueryBlock extends SQLObjectImpl implements SQLSelectQuery
     protected SQLSelectGroupByClause     groupBy;
     protected List<SQLWindow>            windows;
     protected SQLOrderBy                 orderBy;
-    protected boolean                    parenthesized   = false;
     protected boolean                    forUpdate       = false;
     protected boolean                    noWait          = false;
     protected boolean                    skipLocked      = false;
@@ -180,7 +176,7 @@ public class SQLSelectQueryBlock extends SQLObjectImpl implements SQLSelectQuery
                                 }
                             }
 
-                            if (andList.size() == 0) {
+                            if (andList.isEmpty()) {
                                 SQLUtils.replaceInParent(item, new SQLBooleanExpr(false));
                                 return;
                             }
@@ -512,14 +508,6 @@ public class SQLSelectQueryBlock extends SQLObjectImpl implements SQLSelectQuery
         }
         this.setFrom(from);
     }
-
-    public boolean isParenthesized() {
-		return parenthesized;
-	}
-
-	public void setParenthesized(boolean parenthesized) {
-		this.parenthesized = parenthesized;
-	}
 	
     public boolean isForUpdate() {
         return forUpdate;
@@ -1015,16 +1003,6 @@ public class SQLSelectQueryBlock extends SQLObjectImpl implements SQLSelectQuery
         }
     }
 
-    @Override
-    public boolean isBracket() {
-        return parenthesized;
-    }
-
-    @Override
-    public void setBracket(boolean bracket) {
-        this.parenthesized = bracket;
-    }
-
     public SQLTableSource findTableSource(String alias) {
         if (from == null) {
             return null;
@@ -1211,6 +1189,19 @@ public class SQLSelectQueryBlock extends SQLObjectImpl implements SQLSelectQuery
                     && ((SQLPropertyExpr) selectItemExpr).getName().equals("*")) {
                 SQLTableSource resolvedTableSource = ((SQLPropertyExpr) selectItemExpr).getResolvedTableSource();
                 if (resolvedTableSource instanceof SQLSubqueryTableSource) {
+
+                    boolean isParentTableSource = false;
+                    for (SQLObject parent = this.getParent(); parent != null; parent = parent.getParent()) {
+                        if (parent == resolvedTableSource) {
+                            isParentTableSource = true;
+                            break;
+                        }
+                    }
+
+                    if (isParentTableSource) {
+                        return null;
+                    }
+
                     SQLObject resolveColumn = resolvedTableSource.resolveColum(columnNameHash);
                     if (resolveColumn != null) {
                         return resolveColumn;
@@ -1273,7 +1264,7 @@ public class SQLSelectQueryBlock extends SQLObjectImpl implements SQLSelectQuery
                     removedCount++;
                 }
             }
-            if (items.size() == 0) {
+            if (items.isEmpty()) {
                 where = null;
             }
 

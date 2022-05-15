@@ -29,6 +29,7 @@ import com.alibaba.druid.sql.dialect.oracle.visitor.OracleASTVisitorAdapter;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGSelectQueryBlock;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.SQLServerSelectQueryBlock;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.SQLServerTop;
+import com.alibaba.druid.util.JdbcUtils;
 
 import java.util.List;
 
@@ -157,12 +158,15 @@ public class PagerUtils {
         switch (dbType) {
             case mysql:
             case mariadb:
+            case tidb:
             case h2:
             case ads:
+            case clickhouse:
                 return limitMySqlQueryBlock(queryBlock, dbType, offset, count, check);
             case postgresql:
             case hive:
             case odps:
+            case presto:
                 return limitSQLQueryBlock(queryBlock, dbType, offset, count, check);
             case oracle:
             case oceanbase_oracle:
@@ -534,6 +538,7 @@ public class PagerUtils {
         switch (dbType) {
             case mysql:
             case mariadb:
+            case tidb:
             case ads:
                 return new MySqlSelectQueryBlock();
             case oracle:
@@ -638,7 +643,7 @@ public class PagerUtils {
     public static boolean hasUnorderedLimit(String sql, DbType dbType) {
         List<SQLStatement> stmtList = SQLUtils.parseStatements(sql, dbType);
 
-        if (DbType.mysql == dbType) {
+        if (JdbcUtils.isMysqlDbType(dbType)) {
 
             MySqlUnorderedLimitDetectVisitor visitor = new MySqlUnorderedLimitDetectVisitor();
 
@@ -670,7 +675,7 @@ public class PagerUtils {
             SQLOrderBy orderBy = x.getOrderBy();
             SQLLimit limit = x.getLimit();
 
-            if (limit != null && (orderBy == null || orderBy.getItems().size() == 0)) {
+            if (limit != null && (orderBy == null || orderBy.getItems().isEmpty())) {
                 boolean subQueryHasOrderBy = false;
                 SQLTableSource from = x.getFrom();
                 if (from instanceof SQLSubqueryTableSource) {
@@ -695,6 +700,7 @@ public class PagerUtils {
     private static class OracleUnorderedLimitDetectVisitor extends OracleASTVisitorAdapter {
         public int unorderedLimitCount;
 
+        @Override
         public boolean visit(SQLBinaryOpExpr x) {
             SQLExpr left = x.getLeft();
             SQLExpr right = x.getRight();
@@ -741,7 +747,7 @@ public class PagerUtils {
                     orderBy = select.getOrderBy();
                 }
 
-                if (orderBy == null || orderBy.getItems().size() == 0) {
+                if (orderBy == null || orderBy.getItems().isEmpty()) {
                     unorderedLimitCount++;
                 }
             }
@@ -779,7 +785,7 @@ public class PagerUtils {
 
             SQLSelect select = (SQLSelect) parent;
 
-            if (select.getOrderBy() == null || select.getOrderBy().getItems().size() == 0) {
+            if (select.getOrderBy() == null || select.getOrderBy().getItems().isEmpty()) {
                 unorderedLimitCount++;
             }
 

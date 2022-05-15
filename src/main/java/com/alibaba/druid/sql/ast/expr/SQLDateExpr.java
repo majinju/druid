@@ -203,7 +203,16 @@ public class SQLDateExpr extends SQLExprImpl implements SQLLiteralExpr, SQLValua
         return Collections.emptyList();
     }
 
-    public static long supportDbTypes = DbType.of(DbType.mysql, DbType.oracle, DbType.presto, DbType.postgresql, DbType.ads, DbType.hive, DbType.odps);
+    public static long supportDbTypes = DbType.of(DbType.mysql
+            , DbType.oracle
+            , DbType.presto
+            , DbType.trino
+            , DbType.postgresql
+            , DbType.ads
+            , DbType.hive
+            , DbType.odps
+            , DbType.mariadb
+            , DbType.tidb);
 
     public static boolean isSupport(DbType dbType) {
         return (dbType.mask & supportDbTypes) != 0;

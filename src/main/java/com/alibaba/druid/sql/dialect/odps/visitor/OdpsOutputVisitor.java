@@ -18,19 +18,18 @@ package com.alibaba.druid.sql.dialect.odps.visitor;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.ast.*;
 import com.alibaba.druid.sql.ast.expr.SQLCharExpr;
+import com.alibaba.druid.sql.ast.expr.SQLDecimalExpr;
 import com.alibaba.druid.sql.ast.expr.SQLMethodInvokeExpr;
 import com.alibaba.druid.sql.ast.statement.*;
 import com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType;
-import com.alibaba.druid.sql.dialect.hive.stmt.HiveCreateTableStatement;
 import com.alibaba.druid.sql.dialect.hive.stmt.HiveLoadDataStatement;
 import com.alibaba.druid.sql.dialect.hive.visitor.HiveOutputVisitor;
 import com.alibaba.druid.sql.dialect.odps.ast.*;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static com.alibaba.druid.sql.dialect.odps.ast.OdpsAddFileStatement.FileType.JAR;
 
 public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisitor {
     private Set<String> builtInFunctions = new HashSet<String>();
@@ -225,8 +224,6 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
             print(')');
         }
 
-        this.printTblProperties(x);
-
         SQLExpr location = x.getLocation();
         if (location != null) {
             println();
@@ -234,12 +231,22 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
             location.accept(this);
         }
 
+        this.printTblProperties(x);
+
         SQLExpr using = x.getUsing();
         if (using != null) {
             println();
             print0(ucase ? "USING " : "using ");
             using.accept(this);
         }
+
+        return false;
+    }
+
+    public boolean visit(SQLDecimalExpr x) {
+        BigDecimal value = x.getValue();
+        print(value.toString());
+        print("BD");
 
         return false;
     }
@@ -684,6 +691,10 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
     }
 
     protected void printFunctionName(String name) {
+        if (name == null) {
+            return;
+        }
+
         String upperName = name.toUpperCase();
         if (builtInFunctions.contains(upperName)) {
             print0(ucase ? upperName : name);
@@ -838,10 +849,10 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
         print0(ucase ? "ADD TABLE " : "add table ");
         x.getTable().accept(this);
 
-        List<SQLAssignItem> partitoins = x.getPartitoins();
-        if (partitoins.size() > 0) {
+        List<SQLAssignItem> partitions = x.getPartitions();
+        if (partitions.size() > 0) {
             print0(ucase ? " PARTITION (" : " partition (");
-            printAndAccept(partitoins, ", ");
+            printAndAccept(partitions, ", ");
             print(')');
         }
 
@@ -933,6 +944,13 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
     }
 
     @Override
+    public boolean visit(OdpsAlterTableSetFileFormat x) {
+        print0(ucase ? "SET FILEFORMAT " : "set fileformat ");
+        x.getValue().accept(this);
+        return false;
+    }
+
+    @Override
     public boolean visit(OdpsCountStatement x) {
         List<SQLCommentHint> headHints = x.getHeadHintsDirect();
         if (headHints != null) {
@@ -949,10 +967,10 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
         print0(ucase ? "COUNT " : "count ");
         x.getTable().accept(this);
 
-        List<SQLAssignItem> partitoins = x.getPartitoins();
-        if (partitoins.size() > 0) {
+        List<SQLAssignItem> partitions = x.getPartitions();
+        if (partitions.size() > 0) {
             print0(ucase ? " PARTITION (" : " partition (");
-            printAndAccept(partitoins, ", ");
+            printAndAccept(partitions, ", ");
             print(')');
         }
         return false;
@@ -1057,7 +1075,14 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
         if (storedAs != null) {
             println();
             print0(ucase ? "STORED AS " : "stored as ");
-            storedAs.accept(this);
+            printExpr(storedAs);
+        }
+
+        SQLExpr using = x.getUsing();
+        if (using != null) {
+            println();
+            print0(ucase ? "USING " : "using ");
+            printExpr(using);
         }
 
         return false;

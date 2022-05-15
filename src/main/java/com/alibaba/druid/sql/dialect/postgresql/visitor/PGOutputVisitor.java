@@ -97,7 +97,7 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
             printlnComments(x.getBeforeCommentsDirect());
         }
 
-        final boolean bracket = x.isBracket();
+        final boolean bracket = x.isParenthesized();
         if (bracket) {
             print('(');
         }
@@ -435,7 +435,7 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
                 print('(');
                 expr.accept(this);
                 print(')');
-            } else if (expr instanceof PGTypeCastExpr && dataType.getArguments().size() == 0) {
+            } else if (expr instanceof PGTypeCastExpr && dataType.getArguments().isEmpty()) {
                 dataType.accept(this);
                 print('(');
                 visit((PGTypeCastExpr) expr);

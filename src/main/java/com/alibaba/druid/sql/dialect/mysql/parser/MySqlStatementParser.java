@@ -457,6 +457,11 @@ public class MySqlStatementParser extends SQLStatementParser {
             return parseCreateMaterializedView();
         }
 
+        if(lexer.identifierEquals(FnvHash.Constants.ROLE)) {
+            lexer.reset(mark);
+            return parseCreateRole();
+        }
+
         throw new ParserException("TODO " + lexer.info());
     }
 
@@ -1701,7 +1706,7 @@ public class MySqlStatementParser extends SQLStatementParser {
                     break;
             }
             if (hints.size() >= 1
-                    && statementList.size() == 0
+                    && statementList.isEmpty()
                     && acceptHint) {
                 SQLCommentHint hint = hints.get(0);
                 String hintText = hint.getText().toUpperCase();
@@ -2341,7 +2346,7 @@ public class MySqlStatementParser extends SQLStatementParser {
                 break;
             }
 
-            if (stmt.getTables().size() != 0) {
+            if (!stmt.getTables().isEmpty()) {
                 if (lexer.token() == Token.FOR) {
                     lexer.nextToken();
                     acceptIdentifier("EXPORT");
@@ -2442,6 +2447,7 @@ public class MySqlStatementParser extends SQLStatementParser {
             case mysql:
             case ads:
             case presto:
+            case trino:
                 Lexer.SavePoint mark = lexer.mark();
 
                 if (lexer.token() == Token.LPAREN) {
@@ -2695,7 +2701,7 @@ public class MySqlStatementParser extends SQLStatementParser {
         if (lexer.identifierEquals(VARIABLES)) {
             lexer.nextToken();
 
-            MySqlShowVariantsStatement stmt = parseShowVariants();
+            SQLShowVariantsStatement stmt = parseShowVariants();
 
             return stmt;
         }
@@ -2712,7 +2718,7 @@ public class MySqlStatementParser extends SQLStatementParser {
 
             if (lexer.identifierEquals(VARIABLES)) {
                 lexer.nextToken();
-                MySqlShowVariantsStatement stmt = parseShowVariants();
+                SQLShowVariantsStatement stmt = parseShowVariants();
                 stmt.setGlobal(true);
                 return stmt;
             }
@@ -2742,7 +2748,7 @@ public class MySqlStatementParser extends SQLStatementParser {
 
             if (lexer.identifierEquals(VARIABLES)) {
                 lexer.nextToken();
-                MySqlShowVariantsStatement stmt = parseShowVariants();
+                SQLShowVariantsStatement stmt = parseShowVariants();
                 stmt.setSession(true);
                 return stmt;
             }
@@ -4079,24 +4085,6 @@ public class MySqlStatementParser extends SQLStatementParser {
         if (lexer.token() == Token.LIMIT) {
             SQLLimit limit = exprParser.parseLimit();
             stmt.setLimit(limit);
-        }
-
-        return stmt;
-    }
-
-    private MySqlShowVariantsStatement parseShowVariants() {
-        MySqlShowVariantsStatement stmt = new MySqlShowVariantsStatement();
-
-        if (lexer.token() == Token.LIKE) {
-            lexer.nextToken();
-            SQLExpr like = exprParser.expr();
-            stmt.setLike(like);
-        }
-
-        if (lexer.token() == Token.WHERE) {
-            lexer.nextToken();
-            SQLExpr where = exprParser.expr();
-            stmt.setWhere(where);
         }
 
         return stmt;

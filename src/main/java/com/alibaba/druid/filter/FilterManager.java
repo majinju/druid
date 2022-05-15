@@ -71,7 +71,6 @@ public class FilterManager {
         loadFilterConfig(filterProperties, ClassLoader.getSystemClassLoader());
         loadFilterConfig(filterProperties, FilterManager.class.getClassLoader());
         loadFilterConfig(filterProperties, Thread.currentThread().getContextClassLoader());
-        loadFilterConfig(filterProperties, FilterManager.class.getClassLoader());
 
         return filterProperties;
     }
@@ -123,6 +122,9 @@ public class FilterManager {
                 try {
                     filter = (Filter) filterClass.newInstance();
                 } catch (ClassCastException e) {
+                    LOG.error("load filter error.", e);
+                    continue;
+                } catch (NoSuchFieldError e) {
                     LOG.error("load filter error.", e);
                     continue;
                 } catch (InstantiationException e) {

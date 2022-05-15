@@ -37,6 +37,8 @@ public class SQLUpdateStatement extends SQLStatementImpl implements SQLReplaceab
     protected SQLTableSource               tableSource;
     protected List<SQLExpr>                returning;
 
+    protected List<SQLAssignItem>          partitions;
+
     // for mysql
     protected SQLOrderBy orderBy;
 
@@ -119,6 +121,14 @@ public class SQLUpdateStatement extends SQLStatementImpl implements SQLReplaceab
             }
         }
         return null;
+    }
+
+    public List<SQLAssignItem> getPartitions() {
+        return partitions;
+    }
+
+    public void setPartitions(List<SQLAssignItem> partitions) {
+        this.partitions = partitions;
     }
 
     public SQLExpr getWhere() {
@@ -302,7 +312,7 @@ public class SQLUpdateStatement extends SQLStatementImpl implements SQLReplaceab
                     removedCount++;
                 }
             }
-            if (items.size() == 0) {
+            if (items.isEmpty()) {
                 where = null;
             }
 

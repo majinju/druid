@@ -33,6 +33,7 @@ public class SQLAnalyzeTableStatement extends SQLStatementImpl {
 
     private SQLPartitionRef     partition;
     private boolean             forColums = false;
+    private List<SQLName>       columns = new ArrayList<>();
     private boolean             cacheMetadata;
     private boolean             noscan;
     private boolean             computeStatistics;
@@ -51,6 +52,7 @@ public class SQLAnalyzeTableStatement extends SQLStatementImpl {
         if (visitor.visit(this)) {
             this.acceptChild(visitor, tableSources);
             this.acceptChild(visitor, partition);
+            this.acceptChild(visitor, columns);
             this.acceptChild(visitor, adbSchema);
             this.acceptChild(visitor, adbColumns);
             this.acceptChild(visitor, adbColumnsGroup);
@@ -64,7 +66,7 @@ public class SQLAnalyzeTableStatement extends SQLStatementImpl {
     }
 
     public SQLExprTableSource getTable() {
-        if (tableSources.size() == 0) {
+        if (tableSources.isEmpty()) {
             return null;
         }
 
@@ -75,12 +77,16 @@ public class SQLAnalyzeTableStatement extends SQLStatementImpl {
         throw new UnsupportedOperationException();
     }
 
+    public List<SQLName> getColumns() {
+        return columns;
+    }
+
     public void setTable(SQLExprTableSource table) {
         if (table != null) {
             table.setParent(this);
         }
 
-        if (tableSources.size() == 0) {
+        if (tableSources.isEmpty()) {
             if (table == null) {
                 return;
             }

@@ -118,6 +118,7 @@ public class SQLEvalVisitorUtils {
         switch (dbType) {
             case mysql:
             case mariadb:
+            case tidb:
             case h2:
                 return new MySqlEvalVisitorImpl();
             case oracle:
@@ -349,11 +350,10 @@ public class SQLEvalVisitorUtils {
             }
 
             double doubleValue = castToDouble(paramValue);
-            int result = (int) Math.ceil(doubleValue);
-
-            if (Double.isNaN(result)) {
+            if (Double.isNaN(doubleValue)) {
                 x.putAttribute(EVAL_VALUE, null);
             } else {
+                int result = (int) Math.ceil(doubleValue);
                 x.putAttribute(EVAL_VALUE, result);
             }
         } else if ("cos".equals(methodName)) {

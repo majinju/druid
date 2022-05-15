@@ -843,10 +843,7 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
             }
 
             DbType dbType = DbType.of(this.dbTypeName);
-            if (dbType == DbType.mysql
-                    || dbType == DbType.mariadb
-                    || dbType == DbType.oceanbase
-                    || dbType == DbType.ads) {
+            if (JdbcUtils.isMysqlDbType(dbType)) {
                 boolean cacheServerConfigurationSet = false;
                 if (this.connectProperties.containsKey("cacheServerConfiguration")) {
                     cacheServerConfigurationSet = true;
@@ -1321,7 +1318,7 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
 
         String realDriverClassName = driver.getClass().getName();
         if (JdbcUtils.isMySqlDriver(realDriverClassName)) {
-            this.validConnectionChecker = new MySqlValidConnectionChecker();
+            this.validConnectionChecker = new MySqlValidConnectionChecker(usePingMethod);
 
         } else if (realDriverClassName.equals(JdbcConstants.ORACLE_DRIVER)
                 || realDriverClassName.equals(JdbcConstants.ORACLE_DRIVER2)) {
@@ -1336,7 +1333,12 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
                 || realDriverClassName.equals(JdbcConstants.ENTERPRISEDB_DRIVER)
                 || realDriverClassName.equals(JdbcConstants.POLARDB_DRIVER)) {
             this.validConnectionChecker = new PGValidConnectionChecker();
+        } else if (realDriverClassName.equals(JdbcConstants.OCEANBASE_DRIVER)
+            || (realDriverClassName.equals(JdbcConstants.OCEANBASE_DRIVER2))) {
+            DbType dbType = DbType.of(this.dbTypeName);
+            this.validConnectionChecker = new OceanBaseValidConnectionChecker(dbType);
         }
+
     }
 
     private void initExceptionSorter() {
@@ -1718,6 +1720,24 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
         if (holder == null) {
             long waitNanos = waitNanosLocal.get();
 
+            final long activeCount;
+            final long maxActive;
+            final long creatingCount;
+            final long createStartNanos;
+            final long createErrorCount;
+            final Throwable createError;
+            try {
+                lock.lock();
+                activeCount = this.activeCount;
+                maxActive = this.maxActive;
+                creatingCount = this.creatingCount;
+                createStartNanos = this.createStartNanos;
+                createErrorCount = this.createErrorCount;
+                createError = this.createError;
+            } finally {
+                lock.unlock();
+            }
+
             StringBuilder buf = new StringBuilder(128);
             buf.append("wait millis ")//
                .append(waitNanos / (1000 * 1000))//
@@ -1751,7 +1771,7 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
 
             String errorMessage = buf.toString();
 
-            if (this.createError != null) {
+            if (createError != null) {
                 throw new GetConnectionTimeoutException(errorMessage, createError);
             } else {
                 throw new GetConnectionTimeoutException(errorMessage);
@@ -1864,7 +1884,9 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
             this.discardConnection(holder);
         }
 
-        LOG.error("discard connection", error);
+
+        // holder.
+        LOG.error("{conn-" + holder.getConnectionId() + "} discard", error);
     }
 
     /**
@@ -2510,10 +2532,10 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
             return false;
         }
 
-        return put(holder, physicalConnectionInfo.createTaskId);
+        return put(holder, physicalConnectionInfo.createTaskId, false);
     }
 
-    private boolean put(DruidConnectionHolder holder, long createTaskId) {
+    private boolean put(DruidConnectionHolder holder, long createTaskId, boolean checkExists) {
         lock.lock();
         try {
             if (this.closing || this.closed) {
@@ -2526,6 +2548,15 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
                 }
                 return false;
             }
+
+            if (checkExists) {
+                for (int i = 0; i < poolingCount; i++) {
+                    if (connections[i] == holder) {
+                        return false;
+                    }
+                }
+            }
+
             connections[poolingCount] = holder;
             incrementPoolingCount();
 
@@ -3189,7 +3220,7 @@ public class DruidDataSource extends DruidAbstractDataSource implements DruidDat
                 boolean discard = !validate;
                 if (validate) {
                     holer.lastKeepTimeMillis = System.currentTimeMillis();
-                    boolean putOk = put(holer, 0L);
+                    boolean putOk = put(holer, 0L, true);
                     if (!putOk) {
                         discard = true;
                     }
