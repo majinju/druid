@@ -641,6 +641,8 @@ public final class JdbcUtils implements JdbcConstants {
             return DbType.greenplum;
         } else if (rawUrl.startsWith("jdbc:opengauss:") || rawUrl.startsWith("jdbc:gaussdb:") || rawUrl.startsWith("jdbc:dws:iam:")) {
             return DbType.gaussdb;
+        } else if (rawUrl.startsWith("jdbc:vertica:")) {
+            return DbType.vertica;
         } else {
             return null;
         }
@@ -933,13 +935,15 @@ public final class JdbcUtils implements JdbcConstants {
     public static boolean isOracleDbType(String dbType) {
         return DbType.oracle.name().equals(dbType) || //
                 DbType.oceanbase_oracle.name().equals(dbType) || //
-                DbType.ali_oracle.name().equalsIgnoreCase(dbType);
+                DbType.ali_oracle.name().equalsIgnoreCase(dbType) ||
+                DbType.vertica.name().equalsIgnoreCase(dbType);
     }
 
     public static boolean isOracleDbType(DbType dbType) {
         return DbType.oracle == dbType || //
                 DbType.oceanbase_oracle == dbType || //
-                DbType.ali_oracle == dbType;
+                DbType.ali_oracle == dbType ||
+                DbType.vertica == dbType;
     }
 
     public static boolean isMysqlDbType(String dbTypeName) {

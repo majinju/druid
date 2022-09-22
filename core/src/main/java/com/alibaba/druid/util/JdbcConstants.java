@@ -143,6 +143,11 @@ public interface JdbcConstants {
      */
     DbType GREENPLUM = DbType.greenplum;
     String GREENPLUM_DRIVER = "com.pivotal.jdbc.GreenplumDriver";
+    /**
+     * vertica
+     */
+    DbType VERTICA = DbType.vertica;
+    String VERTICA_DRIVER = "com.vertica.jdbc.Driver";
 
     /**
      * oscar

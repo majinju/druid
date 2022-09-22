@@ -63,6 +63,10 @@ public enum DbType {
     tidb(1L << 41),
 
     tydb(1L << 42),
+    /**
+     * 华三mpp数据库
+     */
+    vertica(1L << 43),
 
     ingres(0),
     cloudscape(0),
