@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SQLAlterTableStatement extends SQLStatementImpl implements SQLDDLStatement, SQLAlterStatement {
+    private boolean only;
     private SQLExprTableSource tableSource;
     private List<SQLAlterTableItem> items = new ArrayList<SQLAlterTableItem>();
 
@@ -52,11 +53,22 @@ public class SQLAlterTableStatement extends SQLStatementImpl implements SQLDDLSt
     private boolean ifExists;
     private boolean notClustered;
 
+    // clickhouse
+    private SQLName on;
+
     public SQLAlterTableStatement() {
     }
 
     public SQLAlterTableStatement(DbType dbType) {
         super(dbType);
+    }
+
+    public boolean isOnly() {
+        return only;
+    }
+
+    public void setOnly(boolean only) {
+        this.only = only;
     }
 
     public boolean isIgnore() {
@@ -282,5 +294,21 @@ public class SQLAlterTableStatement extends SQLStatementImpl implements SQLDDLSt
 
     public void setNotClustered(boolean notClustered) {
         this.notClustered = notClustered;
+    }
+
+    @Override
+    public DDLObjectType getDDLObjectType() {
+        return DDLObjectType.TABLE;
+    }
+
+    public SQLName getOn() {
+        return on;
+    }
+
+    public void setOn(SQLName x) {
+        if (x != null) {
+            x.setParent(this);
+        }
+        this.on = x;
     }
 }

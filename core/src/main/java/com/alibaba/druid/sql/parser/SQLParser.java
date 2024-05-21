@@ -288,6 +288,25 @@ public class SQLParser {
                     lexer.nextToken();
                     return strVal;
                 }
+                case QUALIFY: {
+                    String strVal = lexer.stringVal();
+                    Lexer.SavePoint mark = lexer.mark();
+                    lexer.nextToken();
+                    if (lexer.token != Token.WHERE
+                            && lexer.token != Token.GROUP
+                            && lexer.token != Token.HAVING
+                            && lexer.token != Token.WINDOW
+                            && lexer.token != Token.ORDER
+                            && lexer.token != Token.LIMIT
+                            && lexer.token != Token.EOF
+                            && lexer.token != Token.COMMA
+                    ) {
+                        lexer.reset(mark);
+                        return null;
+                    } else {
+                        return strVal;
+                    }
+                }
                 case DISTRIBUTE: {
                     String strVal = lexer.stringVal();
                     Lexer.SavePoint mark = lexer.mark();
@@ -536,14 +555,20 @@ public class SQLParser {
                     }
                     break;
                 }
+                case CLOSE:
+                case SEQUENCE:
+                    if (dbType == DbType.mysql || dbType == DbType.odps || dbType == DbType.hive) {
+                        alias = lexer.stringVal();
+                        lexer.nextToken();
+                        break;
+                    }
+                    break;
                 case CHECK:
                 case INDEX:
                 case ALL:
                 case INNER:
-                case CLOSE:
                 case VALUES:
                 case SHOW:
-                case SEQUENCE:
                 case TO:
                 case REFERENCES:
                 case LIKE:

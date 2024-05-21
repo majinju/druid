@@ -40,12 +40,12 @@ import java.util.List;
 import java.util.Set;
 
 public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTVisitor, OracleASTVisitor {
-    public OscarOutputVisitor(Appendable appender) {
+    public OscarOutputVisitor(StringBuilder appender) {
         super(appender);
         this.dbType = DbType.oscar;
     }
 
-    public OscarOutputVisitor(Appendable appender, boolean parameterized) {
+    public OscarOutputVisitor(StringBuilder appender, boolean parameterized) {
         super(appender, parameterized);
         this.dbType = DbType.oscar;
     }
@@ -185,14 +185,7 @@ public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTV
 
         SQLExpr where = x.getWhere();
         if (where != null) {
-            println();
-            print0(ucase ? "WHERE " : "where ");
-            where.accept(this);
-
-            if (where.hasAfterComment() && isPrettyFormat()) {
-                print(' ');
-                printlnComment(x.getWhere().getAfterCommentsDirect());
-            }
+            printWhere(where);
         }
 
         if (x.getGroupBy() != null) {
@@ -835,6 +828,12 @@ public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTV
         if (x.getPivot() != null) {
             println();
             x.getPivot().accept(this);
+        }
+
+        SQLUnpivot unpivot = x.getUnpivot();
+        if (unpivot != null) {
+            println();
+            unpivot.accept(this);
         }
 
         printAlias(x.getAlias());
@@ -1734,18 +1733,18 @@ public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTV
             print0(ucase ? "CURSOR_SPECIFIC_SEGMENT" : "cursor_specific_segment");
         }
 
-        if (x.getParallel() == Boolean.TRUE) {
+        if (Boolean.TRUE.equals(x.getParallel())) {
             println();
             print0(ucase ? "PARALLEL" : "parallel");
-        } else if (x.getParallel() == Boolean.FALSE) {
+        } else if (Boolean.FALSE.equals(x.getParallel())) {
             println();
             print0(ucase ? "NOPARALLEL" : "noparallel");
         }
 
-        if (x.getCache() == Boolean.TRUE) {
+        if (Boolean.TRUE.equals(x.getCache())) {
             println();
             print0(ucase ? "CACHE" : "cache");
-        } else if (x.getCache() == Boolean.FALSE) {
+        } else if (Boolean.FALSE.equals(x.getCache())) {
             println();
             print0(ucase ? "NOCACHE" : "nocache");
         }
@@ -1900,6 +1899,12 @@ public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTV
             x.getPivot().accept(this);
         }
 
+        SQLUnpivot unpivot = x.getUnpivot();
+        if (unpivot != null) {
+            println();
+            unpivot.accept(this);
+        }
+
         printFlashback(x.getFlashback());
 
         if ((x.getAlias() != null) && (x.getAlias().length() != 0)) {
@@ -1911,11 +1916,11 @@ public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTV
     }
 
     @Override
-    public boolean visit(OracleSelectUnPivot x) {
+    public boolean visit(SQLUnpivot x) {
         print0(ucase ? "UNPIVOT" : "unpivot");
         if (x.getNullsIncludeType() != null) {
             print(' ');
-            print0(OracleSelectUnPivot.NullsIncludeType.toString(x.getNullsIncludeType(), ucase));
+            print0(SQLUnpivot.NullsIncludeType.toString(x.getNullsIncludeType(), ucase));
         }
 
         print0(" (");
@@ -2061,47 +2066,6 @@ public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTV
             printFlashback(x.getFlashback());
         }
 
-        return false;
-    }
-
-    @Override
-    public boolean visit(OracleSelectPivot x) {
-        print0(ucase ? "PIVOT" : "pivot");
-        if (x.isXml()) {
-            print0(ucase ? " XML" : " xml");
-        }
-        print0(" (");
-        printAndAccept(x.getItems(), ", ");
-
-        if (x.getPivotFor().size() > 0) {
-            print0(ucase ? " FOR " : " for ");
-            if (x.getPivotFor().size() == 1) {
-                ((SQLExpr) x.getPivotFor().get(0)).accept(this);
-            } else {
-                print('(');
-                printAndAccept(x.getPivotFor(), ", ");
-                print(')');
-            }
-        }
-
-        if (x.getPivotIn().size() > 0) {
-            print0(ucase ? " IN (" : " in (");
-            printAndAccept(x.getPivotIn(), ", ");
-            print(')');
-        }
-
-        print(')');
-
-        return false;
-    }
-
-    @Override
-    public boolean visit(OracleSelectPivot.Item x) {
-        x.getExpr().accept(this);
-        if ((x.getAlias() != null) && (x.getAlias().length() > 0)) {
-            print0(ucase ? " AS " : " as ");
-            print0(x.getAlias());
-        }
         return false;
     }
 
@@ -2253,7 +2217,7 @@ public class OscarOutputVisitor extends SQLASTOutputVisitor implements OscarASTV
                 print0(", ");
             }
             SQLExpr type = types.get(i);
-            if (Boolean.TRUE == type.getAttribute("ONLY")) {
+            if (Boolean.TRUE.equals(type.getAttribute("ONLY"))) {
                 print0(ucase ? "ONLY " : "only ");
             }
             type.accept(this);

@@ -61,6 +61,7 @@ import com.alibaba.druid.sql.dialect.postgresql.visitor.PGSchemaStatVisitor;
 import com.alibaba.druid.sql.dialect.presto.visitor.PrestoOutputVisitor;
 import com.alibaba.druid.sql.dialect.sqlserver.visitor.SQLServerOutputVisitor;
 import com.alibaba.druid.sql.dialect.sqlserver.visitor.SQLServerSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.starrocks.visitor.StarRocksOutputVisitor;
 import com.alibaba.druid.sql.parser.*;
 import com.alibaba.druid.sql.repository.SchemaRepository;
 import com.alibaba.druid.sql.visitor.*;
@@ -68,7 +69,6 @@ import com.alibaba.druid.support.logging.Log;
 import com.alibaba.druid.support.logging.LogFactory;
 import com.alibaba.druid.util.*;
 
-import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,8 +78,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class SQLUtils {
-    public static final Charset UTF8 = Charset.forName("UTF-8");
-
     private static final SQLParserFeature[] FORMAT_DEFAULT_FEATURES = {
             SQLParserFeature.KeepComments,
             SQLParserFeature.EnableSQLBinaryOpExprGroup
@@ -475,11 +473,11 @@ public class SQLUtils {
         return out.toString();
     }
 
-    public static SQLASTOutputVisitor createOutputVisitor(Appendable out, DbType dbType) {
+    public static SQLASTOutputVisitor createOutputVisitor(StringBuilder out, DbType dbType) {
         return createFormatOutputVisitor(out, null, dbType);
     }
 
-    public static SQLASTOutputVisitor createFormatOutputVisitor(Appendable out,
+    public static SQLASTOutputVisitor createFormatOutputVisitor(StringBuilder out,
                                                                 List<SQLStatement> statementList,
                                                                 DbType dbType) {
         if (dbType == null) {
@@ -505,6 +503,8 @@ public class SQLUtils {
             case tidb:
                 return new MySqlOutputVisitor(out);
             case postgresql:
+            case greenplum:
+            case edb:
                 return new PGOutputVisitor(out);
             case sqlserver:
             case jtds:
@@ -529,6 +529,8 @@ public class SQLUtils {
                 return new ClickhouseOutputVisitor(out);
             case oscar:
                 return new OscarOutputVisitor(out);
+            case starrocks:
+                return new StarRocksOutputVisitor(out);
             default:
                 return new SQLASTOutputVisitor(out, dbType);
         }
@@ -565,6 +567,8 @@ public class SQLUtils {
             case elastic_search:
                 return new MySqlSchemaStatVisitor(repository);
             case postgresql:
+            case greenplum:
+            case edb:
                 return new PGSchemaStatVisitor(repository);
             case sqlserver:
             case jtds:
@@ -654,11 +658,13 @@ public class SQLUtils {
     }
 
     /**
-     * @param columnName
-     * @param tableAlias
-     * @param pattern    if pattern is null,it will be set {%Y-%m-%d %H:%i:%s} as mysql default value and set {yyyy-mm-dd
-     *                   hh24:mi:ss} as oracle default value
-     * @param dbType     {@link DbType} if dbType is null ,it will be set the mysql as a default value
+     * Builds a SQL expression to convert a column's value to a date format based on the provided pattern and database type.
+     *
+     * @param columnName  the name of the column to be converted
+     * @param tableAlias  the alias of the table containing the column (optional)
+     * @param pattern     the date format pattern to be used for the conversion (optional)
+     * @param dbType      the database type for determining the appropriate conversion function
+     * @return a SQL expression representing the converted date value, or an empty string if unable to build the expression
      * @author owenludong.lud
      */
     public static String buildToDate(String columnName, String tableAlias, String pattern, DbType dbType) {
@@ -1877,7 +1883,7 @@ public class SQLUtils {
         if (name.length() > 2) {
             char c0 = name.charAt(0);
             char x0 = name.charAt(name.length() - 1);
-            if ((c0 == '"' && x0 == '"') || (c0 == '`' && x0 == '`') || (c0 == '\'' && x0 == '\'')) {
+            if ((c0 == '[' && x0 == ']') || (c0 == '"' && x0 == '"') || (c0 == '`' && x0 == '`') || (c0 == '\'' && x0 == '\'')) {
                 String normalizeName = name.substring(1, name.length() - 1);
 
                 if (isTrimmed) {
@@ -2040,10 +2046,11 @@ public class SQLUtils {
     }
 
     /**
-     * 重新排序建表语句，解决建表语句的依赖关系
+     * Sorts the SQL statements in the provided SQL query string based on the specified database type.
      *
-     * @param sql
-     * @param dbType
+     * @param sql    the SQL query string to be sorted
+     * @param dbType the database type for parsing and sorting the SQL statements
+     * @return a sorted SQL query string, or an empty string if the input is invalid
      */
     public static String sort(String sql, DbType dbType) {
         List stmtList = SQLUtils.parseStatements(sql, DbType.oracle);
@@ -2052,9 +2059,11 @@ public class SQLUtils {
     }
 
     /**
-     * @param query
-     * @param dbType
-     * @return 0：sql.toString, 1:
+     * Clears the LIMIT clause from the provided SQL query and returns the modified query and the extracted LIMIT information.
+     *
+     * @param query  the SQL query string to be modified
+     * @param dbType the database type for parsing the SQL statements
+     * @return an array containing the modified SQL query string and the extracted LIMIT information, or null if no LIMIT clause is found
      */
     public static Object[] clearLimit(String query, DbType dbType) {
         List stmtList = SQLUtils.parseStatements(query, dbType);

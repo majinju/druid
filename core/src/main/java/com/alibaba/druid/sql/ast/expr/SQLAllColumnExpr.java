@@ -15,27 +15,44 @@
  */
 package com.alibaba.druid.sql.ast.expr;
 
-import com.alibaba.druid.FastsqlException;
+import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.SQLExprImpl;
 import com.alibaba.druid.sql.ast.statement.SQLTableSource;
 import com.alibaba.druid.sql.visitor.SQLASTVisitor;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
 public final class SQLAllColumnExpr extends SQLExprImpl {
     private transient SQLTableSource resolvedTableSource;
 
+    private SQLExpr owner;
+    private List<SQLExpr> except;
+
     public SQLAllColumnExpr() {
     }
 
-    public void output(Appendable buf) {
-        try {
-            buf.append('*');
-        } catch (IOException e) {
-            throw new FastsqlException("output error", e);
+    public void output(StringBuilder buf) {
+        buf.append('*');
+    }
+
+    public SQLExpr getOwner() {
+        return owner;
+    }
+
+    public void setOwner(SQLExpr x) {
+        if (x != null) {
+            x.setParent(this);
         }
+        this.owner = x;
+    }
+
+    public List<SQLExpr> getExcept() {
+        return except;
+    }
+
+    public void setExcept(List<SQLExpr> except) {
+        this.except = except;
     }
 
     protected void accept0(SQLASTVisitor visitor) {

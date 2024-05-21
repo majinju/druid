@@ -51,7 +51,7 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
         groupItemSingleLine = true;
     }
 
-    public OdpsOutputVisitor(Appendable appender) {
+    public OdpsOutputVisitor(StringBuilder appender) {
         super(appender, DbType.odps);
     }
 
@@ -188,12 +188,6 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
             print0(ucase ? " SHARDS" : " shards");
         }
 
-        if (x.getLifecycle() != null) {
-            println();
-            print0(ucase ? "LIFECYCLE " : "lifecycle ");
-            x.getLifecycle().accept(this);
-        }
-
         SQLSelect select = x.getSelect();
         if (select != null) {
             println();
@@ -232,6 +226,12 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
         }
 
         this.printTblProperties(x);
+
+        if (x.getLifecycle() != null) {
+            println();
+            print0(ucase ? "LIFECYCLE " : "lifecycle ");
+            x.getLifecycle().accept(this);
+        }
 
         SQLExpr using = x.getUsing();
         if (using != null) {
@@ -287,6 +287,18 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
         println();
         print(')');
 
+        SQLPivot pivot = x.getPivot();
+        if (pivot != null) {
+            println();
+            pivot.accept(this);
+        }
+
+        SQLUnpivot unpivot = x.getUnpivot();
+        if (unpivot != null) {
+            println();
+            unpivot.accept(this);
+        }
+
         if (x.getAlias() != null) {
             print(' ');
             print0(x.getAlias());
@@ -299,11 +311,6 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
     public boolean visit(SQLJoinTableSource x) {
         SQLTableSource left = x.getLeft();
         left.accept(this);
-
-        if (left.hasAfterComment() && isPrettyFormat()) {
-            println();
-            printlnComment(left.getAfterCommentsDirect());
-        }
 
         if (x.getJoinType() == JoinType.COMMA) {
             print(',');
@@ -448,17 +455,7 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
 
         SQLExpr where = x.getWhere();
         if (where != null) {
-            println();
-            print0(ucase ? "WHERE " : "where ");
-            if (where.hasBeforeComment() && isPrettyFormat()) {
-                printlnComments(x.getWhere().getBeforeCommentsDirect());
-            }
-
-            where.accept(this);
-            if (where.hasAfterComment() && isPrettyFormat()) {
-                print(' ');
-                printlnComment(x.getWhere().getAfterCommentsDirect());
-            }
+            printWhere(where);
         }
 
         if (x.getGroupBy() != null) {
@@ -1105,6 +1102,18 @@ public class OdpsOutputVisitor extends HiveOutputVisitor implements OdpsASTVisit
     public boolean visit(OdpsInstallPackageStatement x) {
         print0(ucase ? "INSTALL PACKAGE " : "install package ");
         printExpr(x.getPackageName());
+        return false;
+    }
+
+    public boolean visit(OdpsPAIStmt x) {
+        print0(ucase ? "PAI " : "pai ");
+        print0(x.getArguments());
+        return false;
+    }
+
+    public boolean visit(OdpsCopyStmt x) {
+        print0(ucase ? "COPY " : "copy ");
+        print0(x.getArguments());
         return false;
     }
 }

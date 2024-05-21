@@ -27,9 +27,7 @@ public class OracleLexer extends Lexer {
     public static final Keywords DEFAULT_ORACLE_KEYWORDS;
 
     static {
-        Map<String, Token> map = new HashMap<String, Token>();
-
-        map.putAll(Keywords.DEFAULT_KEYWORDS.getKeywords());
+        Map<String, Token> map = new HashMap<>(Keywords.DEFAULT_KEYWORDS.getKeywords());
 
         map.put("BEGIN", Token.BEGIN);
         map.put("COMMENT", Token.COMMENT);
@@ -63,6 +61,7 @@ public class OracleLexer extends Lexer {
         map.put("REJECT", Token.REJECT);
         map.put("RETURN", Token.RETURN);
         map.put("RETURNING", Token.RETURNING);
+        map.put("REVERSE", Token.REVERSE);
         map.put("SAVEPOINT", Token.SAVEPOINT);
         map.put("SESSION", Token.SESSION);
 
@@ -109,6 +108,7 @@ public class OracleLexer extends Lexer {
         map.put("PARTITION", Token.PARTITION);
         map.put("TRUE", Token.TRUE);
         map.put("FALSE", Token.FALSE);
+        map.put("CASCADE", Token.CASCADE);
 
         map.put("，", Token.COMMA);
         map.put("（", Token.LPAREN);
@@ -179,7 +179,6 @@ public class OracleLexer extends Lexer {
                 }
 
                 bufPos++;
-                continue;
             }
         } else {
             for (; ; ) {
@@ -190,7 +189,6 @@ public class OracleLexer extends Lexer {
                 }
 
                 bufPos++;
-                continue;
             }
         }
 
@@ -228,7 +226,6 @@ public class OracleLexer extends Lexer {
         } else {
             token = Token.MONKEYS_AT;
         }
-        return;
     }
 
     public void scanComment() {
@@ -258,7 +255,7 @@ public class OracleLexer extends Lexer {
                 bufPos++;
             }
 
-            for (; !isEOF(); ) {
+            while (!isEOF()) {
                 if (ch == '*' && charAt(pos + 1) == '/') {
                     bufPos += 2;
                     scanChar();
@@ -327,7 +324,6 @@ public class OracleLexer extends Lexer {
                 addComment(stringVal);
             }
             endOfComment = isEOF();
-            return;
         }
     }
 
@@ -339,12 +335,8 @@ public class OracleLexer extends Lexer {
             ch = charAt(++pos);
         }
 
-        for (; ; ) {
-            if (ch >= '0' && ch <= '9') {
-                bufPos++;
-            } else {
-                break;
-            }
+        while (ch >= '0' && ch <= '9') {
+            bufPos++;
             ch = charAt(++pos);
         }
 
@@ -359,12 +351,8 @@ public class OracleLexer extends Lexer {
             ch = charAt(++pos);
             isDouble = true;
 
-            for (; ; ) {
-                if (ch >= '0' && ch <= '9') {
-                    bufPos++;
-                } else {
-                    break;
-                }
+            while (ch >= '0' && ch <= '9') {
+                bufPos++;
                 ch = charAt(++pos);
             }
         }
@@ -378,12 +366,8 @@ public class OracleLexer extends Lexer {
                 ch = charAt(++pos);
             }
 
-            for (; ; ) {
-                if (ch >= '0' && ch <= '9') {
-                    bufPos++;
-                } else {
-                    break;
-                }
+            while (ch >= '0' && ch <= '9') {
+                bufPos++;
                 ch = charAt(++pos);
             }
 

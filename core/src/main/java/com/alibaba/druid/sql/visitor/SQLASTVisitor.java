@@ -26,6 +26,7 @@ import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlKillStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.SQLAlterResourceGroupStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.SQLCreateResourceGroupStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.SQLListResourceGroupStatement;
+import com.alibaba.druid.sql.dialect.starrocks.ast.statement.StarRocksCreateResourceStatement;
 
 public interface SQLASTVisitor {
     default void endVisit(SQLAllColumnExpr x) {
@@ -370,6 +371,13 @@ public interface SQLASTVisitor {
     default void endVisit(SQLUpdateStatement x) {
     }
 
+    default boolean visit(SQLGetDiagnosticsStatement x) {
+        return true;
+    }
+
+    default void endVisit(SQLGetDiagnosticsStatement x) {
+    }
+
     default boolean visit(SQLCreateViewStatement x) {
         return true;
     }
@@ -500,6 +508,13 @@ public interface SQLASTVisitor {
     }
 
     default boolean visit(SQLCommentStatement x) {
+        return true;
+    }
+
+    default void endVisit(SQLBeginStatement x) {
+    }
+
+    default boolean visit(SQLBeginStatement x) {
         return true;
     }
 
@@ -747,6 +762,12 @@ public interface SQLASTVisitor {
 
     default void endVisit(SQLAlterTableDropConstraint x) {
     }
+    default boolean visit(SQLAlterTableValidateConstraint x) {
+        return true;
+    }
+
+    default void endVisit(SQLAlterTableValidateConstraint x) {
+    }
 
     default boolean visit(SQLUnique x) {
         return true;
@@ -774,6 +795,13 @@ public interface SQLASTVisitor {
     }
 
     default void endVisit(SQLAlterTableRenameColumn x) {
+    }
+
+    default boolean visit(SQLAlterTableRenameConstraint x) {
+        return true;
+    }
+
+    default void endVisit(SQLAlterTableRenameConstraint x) {
     }
 
     default boolean visit(SQLColumnReference x) {
@@ -1014,6 +1042,20 @@ public interface SQLASTVisitor {
         return true;
     }
 
+    default void endVisit(SQLAlterTableSetTableSpace x) {
+    }
+
+    default boolean visit(SQLAlterTableSetTableSpace x) {
+        return true;
+    }
+
+    default void endVisit(SQLAlterTableSetSchema x) {
+    }
+
+    default boolean visit(SQLAlterTableSetSchema x) {
+        return true;
+    }
+
     default void endVisit(SQLAlterTableSetLifecycle x) {
     }
 
@@ -1043,6 +1085,13 @@ public interface SQLASTVisitor {
     }
 
     default void endVisit(SQLAlterTablePartition x) {
+    }
+
+    default boolean visit(SQLAlterTableArchive x) {
+        return true;
+    }
+
+    default void endVisit(SQLAlterTableArchive x) {
     }
 
     default boolean visit(SQLAlterTablePartition x) {
@@ -1208,6 +1257,12 @@ public interface SQLASTVisitor {
     }
 
     default void endVisit(SQLPartitionByList x) {
+    }
+    default boolean visit(SQLPartitionOf x) {
+        return true;
+    }
+
+    default void endVisit(SQLPartitionOf x) {
     }
 
     default boolean visit(SQLSubPartition x) {
@@ -1990,6 +2045,13 @@ public interface SQLASTVisitor {
     default void endVisit(SQLDropOutlineStatement x) {
     }
 
+    default boolean visit(SQLDropOfflineModelStatement x) {
+        return true;
+    }
+
+    default void endVisit(SQLDropOfflineModelStatement x) {
+    }
+
     default boolean visit(SQLAlterOutlineStatement x) {
         return true;
     }
@@ -2457,6 +2519,49 @@ public interface SQLASTVisitor {
     }
 
     default void endVisit(SQLOptimizeStatement x) {
+    }
+    default boolean visit(SQLAlterTableAttachPartition x) {
+        return true;
+    }
+
+    default void endVisit(SQLAlterTableAttachPartition x) {
+    }
+    default boolean visit(SQLAlterTableDetachPartition x) {
+        return true;
+    }
+
+    default void endVisit(SQLAlterTableDetachPartition x) {
+    }
+
+    default boolean visit(SQLPivot x) {
+        return true;
+    }
+
+    default void endVisit(SQLPivot x) {
+    }
+
+    default boolean visit(SQLUnpivot x) {
+        return true;
+    }
+
+    default void endVisit(SQLUnpivot x) {
+    }
+
+    default void preVisit(StarRocksCreateResourceStatement x) {
+    }
+
+    default boolean visit(StarRocksCreateResourceStatement x) {
+        return true;
+    }
+
+    default void endVisit(StarRocksCreateResourceStatement x) {
+    }
+
+    default boolean visit(SQLCostStatement x) {
+        return true;
+    }
+
+    default void endVisit(SQLCostStatement x) {
     }
 
 }

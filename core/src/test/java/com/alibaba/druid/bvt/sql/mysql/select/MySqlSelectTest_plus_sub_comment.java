@@ -130,7 +130,7 @@ public class MySqlSelectTest_plus_sub_comment extends MysqlTest {
     public void test_10() throws Exception {
         String sql = "select max(id)-- min(id) from test_tablesl";
 
-        MySqlStatementParser parser = new MySqlStatementParser(sql);
+        MySqlStatementParser parser = new MySqlStatementParser(sql, false);
         List<SQLStatement> statementList = parser.parseStatementList();
         SQLSelectStatement stmt = (SQLSelectStatement) statementList.get(0);
         assertEquals("SELECT max(id)", stmt.toString());
@@ -148,7 +148,7 @@ public class MySqlSelectTest_plus_sub_comment extends MysqlTest {
     public void test_12() throws Exception {
         String sql = "select max(id) -- min(id) from test_tablesl";
 
-        MySqlStatementParser parser = new MySqlStatementParser(sql);
+        MySqlStatementParser parser = new MySqlStatementParser(sql, false);
 
         List<SQLStatement> statementList = parser.parseStatementList();
         SQLSelectStatement stmt = (SQLSelectStatement) statementList.get(0);
@@ -209,17 +209,27 @@ public class MySqlSelectTest_plus_sub_comment extends MysqlTest {
         MySqlStatementParser parser = new MySqlStatementParser(sql);
         List<SQLStatement> statementList = parser.parseStatementList();
         SQLSelectStatement stmt = (SQLSelectStatement) statementList.get(0);
-        assertEquals("SELECT *\n" + "FROM mp_Sites\n" + "WHERE SiteID = -1\n" + "\tOR -1 = -1", stmt.toString());
+        assertEquals("SELECT *\n" +
+                "FROM mp_Sites\n" +
+                "WHERE SiteID = -1\n" +
+                "\tOR -1 = -1 -- ORDER BY SiteID LIMIT 1", stmt.toString());
     }
 
     public void test_19() throws Exception {
-        String sql = "-- comments\n"
-                + "SELECT * FROM mp_Sites WHERE SiteID = -1 OR -1 = -1 -- ORDER BY SiteID LIMIT 1";
+        String sql = "-- comments\n" +
+                "SELECT *\n" +
+                "FROM mp_Sites\n" +
+                "WHERE SiteID = -1\n" +
+                "\tOR -1 = -1 -- ORDER BY SiteID LIMIT ";
 
         MySqlStatementParser parser = new MySqlStatementParser(sql);
         List<SQLStatement> statementList = parser.parseStatementList();
         SQLSelectStatement stmt = (SQLSelectStatement) statementList.get(0);
-        assertEquals("-- comments\nSELECT *\n" + "FROM mp_Sites\n" + "WHERE SiteID = -1\n" + "\tOR -1 = -1", stmt.toString());
+        assertEquals("-- comments\n" +
+                "SELECT *\n" +
+                "FROM mp_Sites\n" +
+                "WHERE SiteID = -1\n" +
+                "\tOR -1 = -1 -- ORDER BY SiteID LIMIT ", stmt.toString());
     }
 
     public void test_20() throws Exception {

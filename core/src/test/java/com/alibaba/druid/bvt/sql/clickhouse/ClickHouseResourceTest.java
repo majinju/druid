@@ -39,8 +39,12 @@ public class ClickHouseResourceTest extends OracleTest {
         exec_test("bvt/parser/clickhouse-0.txt");
     }
 
-    public void test_1() throws Exception {
-        exec_test("bvt/parser/clickhouse-1.txt");
+    public void test_15() throws Exception {
+        exec_test("bvt/parser/clickhouse-15.txt");
+    }
+
+    public void test_16() throws Exception {
+        exec_test("bvt/parser/clickhouse-16.txt");
     }
 
     public void test_2() throws Exception {
@@ -95,6 +99,10 @@ public class ClickHouseResourceTest extends OracleTest {
         exec_test("bvt/parser/clickhouse-14.txt");
     }
 
+    public void test_window_funnel() throws Exception {
+        exec_test("bvt/parser/clickhouse-17.txt");
+    }
+
     public void exec_test(String resource) throws Exception {
         System.out.println(resource);
         InputStream is = null;
@@ -105,7 +113,7 @@ public class ClickHouseResourceTest extends OracleTest {
         JdbcUtils.close(reader);
         String[] items = input.split("---------------------------");
         String sql = items[0].trim();
-        String expect = items.length > 1 ? items[1].trim() : null;
+        String expect = items.length > 1 ? items[1].trim().replace("\r\n","\n") : null;
 
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, DbType.clickhouse);
 

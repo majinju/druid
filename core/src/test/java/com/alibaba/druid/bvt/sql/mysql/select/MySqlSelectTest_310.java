@@ -19,6 +19,7 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.MysqlTest;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.parser.SQLParserFeature;
 
 public class MySqlSelectTest_310
         extends MysqlTest {
@@ -40,12 +41,72 @@ public class MySqlSelectTest_310
         assertEquals("SELECT orders.extras -> '$.case_no' > 1", stmt.toString());
     }
 
-    public void test_() throws Exception {
+    public void test_2() throws Exception {
         String sql = "SELECT orders.extras -> '$.case_no' > 1";
 
         SQLStatement stmt = SQLUtils
                 .parseSingleStatement(sql, DbType.mysql);
 
         assertEquals("SELECT orders.extras -> '$.case_no' > 1", stmt.toString());
+    }
+
+    public void test_3() throws Exception {
+        String sql = "--abc\nSELECT orders.extras -> '$.case_no' > 1";
+
+        SQLStatement stmt = SQLUtils
+                .parseSingleStatement(sql, DbType.mysql, SQLParserFeature.MySQLSupportStandardComment);
+
+        assertEquals("-- abc\n" +
+                "SELECT orders.extras -> '$.case_no' > 1", stmt.toString());
+    }
+
+    public void test_4() throws Exception {
+        String sql = "SELECT 1#abc\n";
+
+        SQLStatement stmt = SQLUtils
+                .parseSingleStatement(sql, DbType.mysql, SQLParserFeature.MySQLSupportStandardComment);
+
+        assertEquals("SELECT 1 # abc", stmt.toString());
+
+        // bypass last \n.
+        sql = "SELECT 1#abc\n";
+
+        stmt = SQLUtils
+                .parseSingleStatement(sql, DbType.mysql, SQLParserFeature.MySQLSupportStandardComment);
+
+        assertEquals("SELECT 1 # abc", stmt.toString());
+
+        // bypass last \r\n.
+        sql = "SELECT 1#abc\r\n";
+
+        stmt = SQLUtils
+                .parseSingleStatement(sql, DbType.mysql, SQLParserFeature.MySQLSupportStandardComment);
+
+        assertEquals("SELECT 1 # abc", stmt.toString());
+    }
+
+    public void test_5() throws Exception {
+        String sql = "SELECT 1--abc";
+
+        SQLStatement stmt = SQLUtils
+                .parseSingleStatement(sql, DbType.mysql, SQLParserFeature.MySQLSupportStandardComment);
+
+        assertEquals("SELECT 1 -- abc", stmt.toString());
+
+        // bypass last \n.
+        sql = "SELECT 1--abc\n";
+
+        stmt = SQLUtils
+                .parseSingleStatement(sql, DbType.mysql, SQLParserFeature.MySQLSupportStandardComment);
+
+        assertEquals("SELECT 1 -- abc", stmt.toString());
+
+        // bypass last \r\n.
+        sql = "SELECT 1--abc\r\n";
+
+        stmt = SQLUtils
+                .parseSingleStatement(sql, DbType.mysql, SQLParserFeature.MySQLSupportStandardComment);
+
+        assertEquals("SELECT 1 -- abc", stmt.toString());
     }
 }
